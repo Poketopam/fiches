@@ -36,7 +36,7 @@ return{ef,i,r:r+1}}
 const lab=(c,g)=>g==1?'<10 min':nx(c,g).i+' j';
 function pool(m,d,rnd){let a=S.cards.filter(c=>inD(c,d)&&(m=='all'||(m=='due'&&c.due<=Date.now())||(m=='fail'&&c.last>0&&c.last<3)));
 a.sort((x,y)=>x.due-y.due);if(rnd)a.sort(()=>Math.random()-.5);return a.map(c=>c.id)}
-function nav(){$('#nav').innerHTML=[['rev','Réviser'],['add','Ajouter'],['list','Fiches'],['st','Stats'],['dat','Données']].map(([k,n])=>`<button class="${tab==k?'on':''}" onclick="tab='${k}';Q=null;if(k!='add')E=null;R()">${n}</button>`).join('')}
+function nav(){$('#nav').innerHTML=[['rev','Réviser'],['add','Ajouter'],['list','Fiches'],['st','Stats'],['dat','Données']].map(([k,n])=>`<button class="${tab==k?'on':''}" onclick="tab='${k}';Q=null;if('${k}'!='add')E=null;R()">${n}</button>`).join('')}
 function R(){nav();if(!ok)return lock();({rev:vRev,add:vAdd,list:vList,st:vSt,dat:vDat})[tab]()}
 function lock(){$('#nav').innerHTML='';A.innerHTML=`<h2>🔒 Fiches</h2><input id=p type=password placeholder="Mot de passe"><button class="b f" onclick="unlock()">Ouvrir</button><p id=e></p>`}
 async function unlock(){if(await sha($('#p').value)==localStorage.fcpw){ok=1;R()}else $('#e').textContent='Mot de passe incorrect'}
