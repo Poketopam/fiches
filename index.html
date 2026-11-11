@@ -16,6 +16,7 @@ textarea{min-height:110px}.b{background:var(--or);color:#fff;border:0;border-rad
 .g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.g button{border:0;border-radius:12px;padding:10px 2px;background:var(--so);border:1px solid var(--li);font-size:14px}.g small{display:block;color:#a98466;font-size:11px}
 .bar{display:flex;align-items:flex-end;gap:3px;height:80px}.bar i{flex:1;background:var(--or);border-radius:3px 3px 0 0;min-height:2px}
 .tag{display:inline-block;background:var(--so);border:1px solid var(--li);border-radius:20px;padding:1px 8px;font-size:12px;margin:2px 3px 0 0}
+.wd{display:flex;color:#fff;border-radius:18px;padding:14px 6px;margin-bottom:14px;text-align:center;transition:background .3s}.wd div{flex:1;font-size:12px}.wd b{display:block;font-size:30px}
 .k{display:grid;grid-template-columns:1fr 1fr;gap:8px}.k div{background:#fff;border:1px solid var(--li);border-radius:12px;padding:10px}.k b{display:block;font-size:22px;color:var(--or)}
 </style></head><body><div id="app"></div>
 <nav id="nav"></nav>
@@ -42,11 +43,15 @@ function lock(){$('#nav').innerHTML='';A.innerHTML=`<h2>🔒 Fiches</h2><input i
 async function unlock(){if(await sha($('#p').value)==localStorage.fcpw){ok=1;R()}else $('#e').textContent='Mot de passe incorrect'}
 function dopt(sel){return decks().map(d=>`<option ${d==sel?'selected':''}>${esc(d)}</option>`).join('')}
 function vRev(){if(Q)return card();
-A.innerHTML=`<h2>Réviser</h2><div class=box><label>Paquet (inclut ses sous-paquets)</label><select id=d><option value="">Tous les paquets</option>${dopt()}</select>
+A.innerHTML=wd()+`<h2>Réviser</h2><div class=box><label>Paquet (inclut ses sous-paquets)</label><select id=d><option value="">Tous les paquets</option>${dopt()}</select>
 <label>Mode</label><select id=m><option value=due>Répétition espacée (à revoir)</option><option value=all>Toutes les fiches</option><option value=fail>Seulement les fiches ratées</option></select>
 <label><input type=checkbox id=rn style="width:auto"> Ordre aléatoire</label><br><label><input type=checkbox id=rv style="width:auto"> Verso d'abord</label></div>
 <p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><p style="font-size:13px;color:#a98466">Espace = retourner · 1 Raté · 2 Difficile · 3 Bien · 4 Facile · swipe → bien, ← raté</p>`;
 const u=()=>$('#cnt').textContent=pool('due',$('#d').value).length+' fiche(s) à revoir dans ce paquet';$('#d').onchange=u;u()}
+function wd(){const L=S.log,ds=t=>new Date(t).toDateString(),n=Date.now(),td=new Set(L.filter(l=>ds(l.t)==ds(n)).map(l=>l.id)).size;
+let st=0,d=t0();if(!L.some(l=>ds(l.t)==ds(d)))d-=D;while(L.some(l=>ds(l.t)==ds(d))){st++;d-=D}
+const ma=S.cards.filter(c=>c.i>=21).length,s=x=>x>1?'s':'';
+return `<div class=wd style="background:${td?'var(--or)':'var(--br)'}"><div><b>${st}</b>jour${s(st)} de suite</div><div><b>${td}</b>fiche${s(td)} révisée${s(td)} aujourd'hui</div><div><b>${ma}</b>fiche${s(ma)} maîtrisée${s(ma)}</div></div>`}
 function start(){const p=pool($('#m').value,$('#d').value,$('#rn').checked);if(!p.length)return alert('Aucune fiche pour ce mode.');
 Q={pool:p,queue:p.splice(0,20),done:0,fl:0,rv:$('#rv').checked,n:0};card()}
 function card(){if(!Q.queue.length){const more=Q.pool.length;A.innerHTML=`<h2>Session terminée 🎉</h2><p>${Q.done} fiche(s) validée(s).</p>${more?`<button class="b f" onclick="Q.queue=Q.pool.splice(0,20);card()">Continuer (${Math.min(20,more)} de plus)</button><br><br>`:''}<button class="b s f" onclick="Q=null;R()">Terminer</button>`;return}
