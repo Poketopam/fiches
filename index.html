@@ -1,131 +1,401 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fiches</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Fiches"><meta name="theme-color" content="#fffaf4">
-<style>
-:root{--bg:#fffaf4;--or:#e8832a;--br:#6b4226;--li:#f0dfcc;--so:#fff3e3}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--br);font:16px -apple-system,system-ui,"PingFang SC","Microsoft YaHei",sans-serif}
-#app{max-width:640px;margin:auto;padding:16px 16px 90px;padding-top:calc(16px + env(safe-area-inset-top))}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--li);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;border:0;background:0;padding:12px 2px;font-size:13px;color:#a98466}nav .on{color:var(--or);font-weight:700}
-h2{margin:.2em 0 .6em}input,select,textarea,button{font:inherit;color:inherit}
-input,select,textarea{width:100%;padding:10px;border:1px solid var(--li);border-radius:10px;background:#fff;margin:4px 0 10px}
-textarea{min-height:110px}.b{background:var(--or);color:#fff;border:0;border-radius:12px;padding:12px 16px;font-weight:600}
-.b.s{background:var(--so);color:var(--br);border:1px solid var(--li)}.b.f{width:100%}
-.box{background:#fff;border:1px solid var(--li);border-radius:14px;padding:12px;margin:8px 0}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
-#card{background:#fff;border:2px solid var(--li);border-radius:20px;min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:28px;margin:14px 0;touch-action:pan-y;user-select:none;white-space:pre-wrap}
-#card small{font-size:12px;color:#a98466;margin-bottom:12px}.back{border-color:var(--or);background:var(--so)}
-.g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.g button{border:0;border-radius:12px;padding:10px 2px;background:var(--so);border:1px solid var(--li);font-size:14px}.g small{display:block;color:#a98466;font-size:11px}
-.bar{display:flex;align-items:flex-end;gap:3px;height:80px}.bar i{flex:1;background:var(--or);border-radius:3px 3px 0 0;min-height:2px}
-.tag{display:inline-block;background:var(--so);border:1px solid var(--li);border-radius:20px;padding:1px 8px;font-size:12px;margin:2px 3px 0 0}
-.wd{display:flex;color:#fff;border-radius:18px;padding:14px 6px;margin-bottom:14px;text-align:center;transition:background .3s}.wd div{flex:1;font-size:12px}.wd b{display:block;font-size:30px}
-#wr svg{display:block}
-.k{display:grid;grid-template-columns:1fr 1fr;gap:8px}.k div{background:#fff;border:1px solid var(--li);border-radius:12px;padding:10px}.k b{display:block;font-size:22px;color:var(--or)}
-</style></head><body><div id="app"></div>
-<nav id="nav"></nav>
-<script>
-const $=s=>document.querySelector(s),D=864e5,A=$('#app');
-let S=JSON.parse(localStorage.fc||'{"cards":[],"log":[],"decks":[]}'),tab='rev',Q=null,E=null;localStorage.removeItem('fcpw');
-const save=()=>localStorage.fc=JSON.stringify(S);
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const t0=()=>new Date().setHours(0,0,0,0),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const decks=()=>[...new Set([...S.decks,...S.cards.map(c=>c.d)])].filter(Boolean).sort();
-const inD=(c,d)=>!d||c.d===d||c.d.startsWith(d+'/');
-const mk=(f,b,d,t)=>({id:uid(),f,b,d:d||'Général',t:t||[],ef:2.5,i:0,r:0,due:0,l:0,last:0,u:Date.now()});
-function nx(c,g){let{ef,i,r}=c;if(g==1)return{ef:Math.max(1.3,ef-.2),i:0,r:0};
-if(g==2){i=r?Math.max(i+1,Math.round(i*1.2)):1;ef=Math.max(1.3,ef-.15)}
-else if(g==3)i=r==0?2:r==1?6:Math.round(i*ef);else{i=r?Math.max(i+1,Math.round(i*ef*1.3)):4;ef+=.15}
-return{ef,i,r:r+1}}
-const lab=(c,g)=>g==1?'<10 min':nx(c,g).i+' j';
-function pool(m,d,rnd){let a=S.cards.filter(c=>inD(c,d)&&(m=='all'||(m=='due'&&c.due<=Date.now())||(m=='fail'&&c.last>0&&c.last<3)));
-a.sort((x,y)=>x.due-y.due);if(rnd)a.sort(()=>Math.random()-.5);return a.map(c=>c.id)}
-function nav(){$('#nav').innerHTML=[['rev','Réviser'],['add','Ajouter'],['list','Fiches'],['st','Stats'],['dat','Données']].map(([k,n])=>`<button class="${tab==k?'on':''}" onclick="tab='${k}';Q=null;if('${k}'!='add')E=null;R()">${n}</button>`).join('')}
-function R(){nav();({rev:vRev,add:vAdd,list:vList,st:vSt,dat:vDat})[tab]()}
-function dopt(sel){return decks().map(d=>`<option ${d==sel?'selected':''}>${esc(d)}</option>`).join('')}
-function vRev(){if(Q)return card();
-A.innerHTML=wd()+`<h2>Réviser</h2><div class=box><label>Paquet (inclut ses sous-paquets)</label><select id=d><option value="">Tous les paquets</option>${dopt()}</select>
+<!doctype html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>Fiches</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Fiches">
+    <meta name="theme-color" content="#fffaf4">
+    <style>
+        :root {
+            --bg: #fffaf4;
+            --or: #e8832a;
+            --br: #6b4226;
+            --li: #f0dfcc;
+            --so: #fff3e3
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--br);
+            font: 16px -apple-system, system-ui, "PingFang SC", "Microsoft YaHei", sans-serif
+        }
+
+        #app {
+            max-width: 640px;
+            margin: auto;
+            padding: 16px 16px 90px;
+            padding-top: calc(16px + env(safe-area-inset-top))
+        }
+
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            background: #fff;
+            border-top: 1px solid var(--li);
+            padding-bottom: env(safe-area-inset-bottom)
+        }
+
+        nav button {
+            flex: 1;
+            border: 0;
+            background: 0;
+            padding: 12px 2px;
+            font-size: 13px;
+            color: #a98466
+        }
+
+        nav .on {
+            color: var(--or);
+            font-weight: 700
+        }
+
+        h2 {
+            margin: .2em 0 .6em
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            font: inherit;
+            color: inherit
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--li);
+            border-radius: 10px;
+            background: #fff;
+            margin: 4px 0 10px
+        }
+
+        textarea {
+            min-height: 110px
+        }
+
+        .b {
+            background: var(--or);
+            color: #fff;
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-weight: 600
+        }
+
+        .b.s {
+            background: var(--so);
+            color: var(--br);
+            border: 1px solid var(--li)
+        }
+
+        .b.f {
+            width: 100%
+        }
+
+        .box {
+            background: #fff;
+            border: 1px solid var(--li);
+            border-radius: 14px;
+            padding: 12px;
+            margin: 8px 0
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+        .row>* {
+            flex: 1
+        }
+
+        #card {
+            background: #fff;
+            border: 2px solid var(--li);
+            border-radius: 20px;
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+            font-size: 28px;
+            margin: 14px 0;
+            touch-action: pan-y;
+            user-select: none;
+            white-space: pre-wrap
+        }
+
+        #card small {
+            font-size: 12px;
+            color: #a98466;
+            margin-bottom: 12px
+        }
+
+        .back {
+            border-color: var(--or);
+            background: var(--so)
+        }
+
+        .g {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px
+        }
+
+        .g button {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 2px;
+            background: var(--so);
+            border: 1px solid var(--li);
+            font-size: 14px
+        }
+
+        .g small {
+            display: block;
+            color: #a98466;
+            font-size: 11px
+        }
+
+        .bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 80px
+        }
+
+        .bar i {
+            flex: 1;
+            background: var(--or);
+            border-radius: 3px 3px 0 0;
+            min-height: 2px
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--so);
+            border: 1px solid var(--li);
+            border-radius: 20px;
+            padding: 1px 8px;
+            font-size: 12px;
+            margin: 2px 3px 0 0
+        }
+
+        .wd {
+            display: flex;
+            color: #fff;
+            border-radius: 18px;
+            padding: 14px 6px;
+            margin-bottom: 14px;
+            text-align: center;
+            transition: background .3s
+        }
+
+        .wd div {
+            flex: 1;
+            font-size: 12px
+        }
+
+        .wd b {
+            display: block;
+            font-size: 30px
+        }
+
+        #wr svg {
+            display: block
+        }
+
+        .k {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px
+        }
+
+        .k div {
+            background: #fff;
+            border: 1px solid var(--li);
+            border-radius: 12px;
+            padding: 10px
+        }
+
+        .k b {
+            display: block;
+            font-size: 22px;
+            color: var(--or)
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <nav id="nav"></nav>
+    <script>
+        const $ = s => document.querySelector(s), D = 864e5, A = $('#app');
+        let S = JSON.parse(localStorage.fc || '{"cards":[],"log":[],"decks":[]}'), tab = 'rev', Q = null, E = null; localStorage.removeItem('fcpw');
+        const save = () => localStorage.fc = JSON.stringify(S);
+        const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const t0 = () => new Date().setHours(0, 0, 0, 0), uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        const decks = () => [...new Set([...S.decks, ...S.cards.map(c => c.d)])].filter(Boolean).sort();
+        const inD = (c, d) => !d || c.d === d || c.d.startsWith(d + '/');
+        const mk = (f, b, d, t) => ({ id: uid(), f, b, d: d || 'Général', t: t || [], ef: 2.5, i: 0, r: 0, due: 0, l: 0, last: 0, u: Date.now() });
+        function nx(c, g) {
+            let { ef, i, r } = c; if (g == 1) return { ef: Math.max(1.3, ef - .2), i: 0, r: 0 };
+            if (g == 2) { i = r ? Math.max(i + 1, Math.round(i * 1.2)) : 1; ef = Math.max(1.3, ef - .15) }
+            else if (g == 3) i = r == 0 ? 2 : r == 1 ? 6 : Math.round(i * ef); else { i = r ? Math.max(i + 1, Math.round(i * ef * 1.3)) : 4; ef += .15 }
+            return { ef, i, r: r + 1 }
+        }
+        const lab = (c, g) => g == 1 ? '<10 min' : nx(c, g).i + ' j';
+        function pool(m, d, rnd) {
+            let a = S.cards.filter(c => inD(c, d) && (m == 'all' || (m == 'due' && c.due <= Date.now()) || (m == 'fail' && c.last > 0 && c.last < 3)));
+            a.sort((x, y) => x.due - y.due); if (rnd) a.sort(() => Math.random() - .5); return a.map(c => c.id)
+        }
+        function nav() { $('#nav').innerHTML = [['rev', 'Réviser'], ['add', 'Ajouter'], ['list', 'Fiches'], ['st', 'Stats'], ['dat', 'Données']].map(([k, n]) => `<button class="${tab == k ? 'on' : ''}" onclick="tab='${k}';Q=null;if('${k}'!='add')E=null;R()">${n}</button>`).join('') }
+        function R() { nav(); ({ rev: vRev, add: vAdd, list: vList, st: vSt, dat: vDat })[tab]() }
+        function dopt(sel) { return decks().map(d => `<option ${d == sel ? 'selected' : ''}>${esc(d)}</option>`).join('') }
+        function vRev() {
+            if (Q) return card();
+            A.innerHTML = wd() + `<h2>Réviser</h2><div class=box><label>Paquet (inclut ses sous-paquets)</label><select id=d><option value="">Tous les paquets</option>${dopt()}</select>
 <label>Mode</label><select id=m><option value=due>Répétition espacée (à revoir)</option><option value=all>Toutes les fiches</option><option value=fail>Seulement les fiches ratées</option></select>
 <label><input type=checkbox id=rn style="width:auto"> Ordre aléatoire</label><br><label><input type=checkbox id=rv style="width:auto"> Verso d'abord</label></div>
-<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><button class="b s f" id=wb onclick="start(1)" style="margin-top:8px;display:none">✍️ Écriture des caractères chinois</button><p style="font-size:13px;color:#a98466">Espace = retourner · 1 Raté · 2 Difficile · 3 Bien · 4 Facile · swipe → bien, ← raté</p>`;
-const u=()=>{const d=$('#d').value;$('#cnt').textContent=pool('due',d).length+' fiche(s) à revoir dans ce paquet';$('#wb').style.display=d&&S.cards.some(c=>inD(c,d)&&zh(c.f))?'':'none'};$('#d').onchange=u;u()}
-function wd(){const L=S.log,ds=t=>new Date(t).toDateString(),n=Date.now(),td=new Set(L.filter(l=>ds(l.t)==ds(n)).map(l=>l.id)).size;
-let st=0,d=t0();if(!L.some(l=>ds(l.t)==ds(d)))d-=D;while(L.some(l=>ds(l.t)==ds(d))){st++;d-=D}
-const ex=S.exam?Math.round((new Date(S.exam+'T00:00:00')-t0())/D):null,s=x=>x>1?'s':'';
-return `<div class=wd style="background:${td?'var(--or)':'var(--br)'}"><div><b>${st}</b>jour${s(st)} de suite</div><div><b>${td}</b>fiche${s(td)} révisée${s(td)} aujourd'hui</div><div><b>${ex===null?'–':ex<0?'✓':ex}</b>${ex===null?'date du HSK à définir (Données)':ex==0?'jour J !':ex<0?'examen passé':`jour${s(ex)} avant le HSK`}</div></div>`}
-function start(x){x=!!x;let p=pool($('#m').value,$('#d').value,$('#rn').checked);if(x)p=p.filter(id=>zh(S.cards.find(c=>c.id==id).f));if(!p.length)return alert('Aucune fiche pour ce mode.');
-Q={pool:p,queue:p.splice(0,20),done:0,fl:0,rv:$('#rv').checked,n:0,w:x,fails:{},skip:0};card()}
-function card(){if(Q.queue.length&&Q.w)return wcard();if(!Q.queue.length){const more=Q.pool.length;A.innerHTML=`<h2>Session terminée 🎉</h2><p>${Q.done} fiche(s) validée(s).</p>${Q.skip?`<p>${Q.skip} fiche(s) mise(s) de côté après 3 échecs d'affilée : elles reviendront à la prochaine session.</p>`:''}${more?`<button class="b f" onclick="Q.queue=Q.pool.splice(0,20);card()">Continuer (${Math.min(20,more)} de plus)</button><br><br>`:''}<button class="b s f" onclick="Q=null;R()">Terminer</button>`;return}
-const c=S.cards.find(x=>x.id==Q.queue[0]),face=Q.fl?(Q.rv?c.f:c.b):(Q.rv?c.b:c.f);
-A.innerHTML=`<div class=row><span>${Q.done}/${Q.done+Q.queue.length+Q.pool.length}</span><button class="b s" style="flex:0" onclick="Q=null;R()">Quitter</button></div>
-<div id=card class="${Q.fl?'back':''}"><small>${esc(c.d)}</small>${esc(face)}</div>${Q.fl?`<div class=g>${[1,2,3,4].map(g=>`<button onclick=gr(${g})>${['Raté','Difficile','Bien','Facile'][g-1]}<small>${lab(c,g)}</small></button>`).join('')}</div>`:'<p style="text-align:center;color:#a98466">Touche la carte pour la retourner</p>'}`;
-const el=$('#card');let x0=0;el.onclick=()=>{if(!Q.fl){Q.fl=1;card()}};
-el.ontouchstart=e=>x0=e.touches[0].clientX;
-el.ontouchend=e=>{const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>80){e.preventDefault();if(!Q.fl){Q.fl=1;card()}else gr(dx>0?3:1)}}}
-function gr(g){if(Q&&Q.fl)grade(g)}
-function grade(g){const id=Q.queue.shift(),c=S.cards.find(x=>x.id==id),n=nx(c,g);
-Object.assign(c,n,{due:g==1?0:t0()+n.i*D,last:g,l:c.l+(g==1?1:0),u:Date.now()});S.log.push({t:Date.now(),id,g,d:c.d});save();
-if(g==1){const k=Q.fails[id]=(Q.fails[id]||0)+1;if(k>=3)Q.skip++;else Q.queue.push(id)}else{Q.fails[id]=0;Q.done++}Q.fl=0;card()}
-document.addEventListener('keydown',e=>{if(tab!='rev'||!Q||Q.w||!Q.queue.length||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
-if(e.key==' '||e.key=='Enter'){e.preventDefault();if(!Q.fl){Q.fl=1;card()}}else if('1234'.includes(e.key))gr(+e.key)});
-const zh=s=>/[\u3400-\u9fff]/.test(s);
-const HW='https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js',HD=c=>'https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/'+encodeURIComponent(c)+'.json';
-async function gf(u){const ch=await caches.open('trace');let r=await ch.match(u);if(!r){r=await fetch(u);if(!r.ok)throw 0;await ch.put(u,r.clone())}return r}
-async function loadHW(){if(window.HanziWriter)return;const e=document.createElement('script');e.textContent=await(await gf(HW)).text();document.head.appendChild(e)}
-async function dl(){const cs=[...new Set(S.cards.flatMap(c=>[...c.f]).filter(zh))],b=$('#dlb');let n=0,ko=0;try{await loadHW()}catch(e){return alert('Pas de connexion : impossible de télécharger.')}
-navigator.storage?.persist?.();for(const c of cs){try{await gf(HD(c))}catch(e){ko++}b.textContent=`Téléchargement ${++n}/${cs.length}`}
-b.textContent='Télécharger les tracés (mode écriture)';alert(`Terminé : ${cs.length-ko} caractère(s) prêt(s)`+(ko?`, ${ko} indisponible(s)`:''))}
-let W=null,PY='';
-async function wcard(){const c=S.cards.find(x=>x.id==Q.queue[0]),ch=[...c.f].filter(zh),ln=c.b.split('\n'),fr=ln.length>1?ln.slice(1).join(' '):c.b;PY=ln.length>1?ln[0]:'';
-A.innerHTML=`<div class=row><span>${Q.done}/${Q.done+Q.queue.length+Q.pool.length}</span><button class="b s" style="flex:0" onclick="W=null;Q=null;R()">Quitter</button></div>
+<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><button class="b s f" id=wb onclick="start(1)" style="margin-top:8px;display:none">Écriture des caractères chinois</button><p style="font-size:13px;color:#a98466">Espace = retourner · 1 Raté · 2 Difficile · 3 Bien · 4 Facile · swipe → bien, ← raté</p>`;
+            const u = () => { const d = $('#d').value; $('#cnt').textContent = pool('due', d).length + ' fiche(s) à revoir dans ce paquet'; $('#wb').style.display = d && S.cards.some(c => inD(c, d) && zh(c.f)) ? '' : 'none' }; $('#d').onchange = u; u()
+        }
+        function wd() {
+            const L = S.log, ds = t => new Date(t).toDateString(), n = Date.now(), td = new Set(L.filter(l => ds(l.t) == ds(n)).map(l => l.id)).size;
+            let st = 0, d = t0(); if (!L.some(l => ds(l.t) == ds(d))) d -= D; while (L.some(l => ds(l.t) == ds(d))) { st++; d -= D }
+            const ex = S.exam ? Math.round((new Date(S.exam + 'T00:00:00') - t0()) / D) : null, s = x => x > 1 ? 's' : '';
+            return `<div class=wd style="background:${td ? 'var(--or)' : 'var(--br)'}"><div><b>${st}</b>jour${s(st)} de suite</div><div><b>${td}</b>fiche${s(td)} révisée${s(td)} aujourd'hui</div><div><b>${ex === null ? '–' : ex < 0 ? '✓' : ex}</b>${ex === null ? 'date du HSK à définir (Données)' : ex == 0 ? 'jour J !' : ex < 0 ? 'examen passé' : `jour${s(ex)} avant le HSK`}</div></div>`
+        }
+        function start(x) {
+            x = !!x; let p = pool($('#m').value, $('#d').value, $('#rn').checked); if (x) p = p.filter(id => zh(S.cards.find(c => c.id == id).f)); if (!p.length) return alert('Aucune fiche pour ce mode.');
+            Q = { pool: p, queue: p.splice(0, 20), done: 0, fl: 0, rv: $('#rv').checked, n: 0, w: x, fails: {}, skip: 0 }; card()
+        }
+        function card() {
+            if (Q.queue.length && Q.w) return wcard(); if (!Q.queue.length) { const more = Q.pool.length; A.innerHTML = `<h2>Session terminée 🎉</h2><p>${Q.done} fiche(s) validée(s).</p>${Q.skip ? `<p>${Q.skip} fiche(s) mise(s) de côté après 3 échecs d'affilée : elles reviendront à la prochaine session.</p>` : ''}${more ? `<button class="b f" onclick="Q.queue=Q.pool.splice(0,20);card()">Continuer (${Math.min(20, more)} de plus)</button><br><br>` : ''}<button class="b s f" onclick="Q=null;R()">Terminer</button>`; return }
+            const c = S.cards.find(x => x.id == Q.queue[0]), face = Q.fl ? (Q.rv ? c.f : c.b) : (Q.rv ? c.b : c.f);
+            A.innerHTML = `<div class=row><span>${Q.done}/${Q.done + Q.queue.length + Q.pool.length}</span><button class="b s" style="flex:0" onclick="Q=null;R()">Quitter</button></div>
+<div id=card class="${Q.fl ? 'back' : ''}"><small>${esc(c.d)}</small>${esc(face)}</div>${Q.fl ? `<div class=g>${[1, 2, 3, 4].map(g => `<button onclick=gr(${g})>${['Raté', 'Difficile', 'Bien', 'Facile'][g - 1]}<small>${lab(c, g)}</small></button>`).join('')}</div>` : '<p style="text-align:center;color:#a98466">Touche la carte pour la retourner</p>'}`;
+            const el = $('#card'); let x0 = 0; el.onclick = () => { if (!Q.fl) { Q.fl = 1; card() } };
+            el.ontouchstart = e => x0 = e.touches[0].clientX;
+            el.ontouchend = e => { const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 80) { e.preventDefault(); if (!Q.fl) { Q.fl = 1; card() } else gr(dx > 0 ? 3 : 1) } }
+        }
+        function gr(g) { if (Q && Q.fl) grade(g) }
+        function grade(g) {
+            const id = Q.queue.shift(), c = S.cards.find(x => x.id == id), n = nx(c, g);
+            Object.assign(c, n, { due: g == 1 ? 0 : t0() + n.i * D, last: g, l: c.l + (g == 1 ? 1 : 0), u: Date.now() }); S.log.push({ t: Date.now(), id, g, d: c.d }); save();
+            if (g == 1) { const k = Q.fails[id] = (Q.fails[id] || 0) + 1; if (k >= 3) Q.skip++; else Q.queue.push(id) } else { Q.fails[id] = 0; Q.done++ } Q.fl = 0; card()
+        }
+        document.addEventListener('keydown', e => {
+            if (tab != 'rev' || !Q || Q.w || !Q.queue.length || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+            if (e.key == ' ' || e.key == 'Enter') { e.preventDefault(); if (!Q.fl) { Q.fl = 1; card() } } else if ('1234'.includes(e.key)) gr(+e.key)
+        });
+        const zh = s => /[\u3400-\u9fff]/.test(s);
+        const HW = 'https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js', HD = c => 'https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/' + encodeURIComponent(c) + '.json';
+        async function gf(u) { const ch = await caches.open('trace'); let r = await ch.match(u); if (!r) { r = await fetch(u); if (!r.ok) throw 0; await ch.put(u, r.clone()) } return r }
+        async function loadHW() { if (window.HanziWriter) return; const e = document.createElement('script'); e.textContent = await (await gf(HW)).text(); document.head.appendChild(e) }
+        async function dl() {
+            const cs = [...new Set(S.cards.flatMap(c => [...c.f]).filter(zh))], b = $('#dlb'); let n = 0, ko = 0; try { await loadHW() } catch (e) { return alert('Pas de connexion : impossible de télécharger.') }
+            navigator.storage?.persist?.(); for (const c of cs) { try { await gf(HD(c)) } catch (e) { ko++ } b.textContent = `Téléchargement ${++n}/${cs.length}` }
+            b.textContent = 'Télécharger les tracés (mode écriture)'; alert(`Terminé : ${cs.length - ko} caractère(s) prêt(s)` + (ko ? `, ${ko} indisponible(s)` : ''))
+        }
+        let W = null, PY = '';
+        async function wcard() {
+            const c = S.cards.find(x => x.id == Q.queue[0]), ch = [...c.f].filter(zh), ln = c.b.split('\n'), fr = ln.length > 1 ? ln.slice(1).join(' ') : c.b; PY = ln.length > 1 ? ln[0] : '';
+            A.innerHTML = `<div class=row><span>${Q.done}/${Q.done + Q.queue.length + Q.pool.length}</span><button class="b s" style="flex:0" onclick="W=null;Q=null;R()">Quitter</button></div>
 <div id=card style="min-height:90px;font-size:26px;padding:14px"><small>${esc(c.d)}</small>${esc(fr)}<div id=py style="font-size:20px;color:var(--or);margin-top:8px"></div></div>
 <div id=wr class=row style="justify-content:center;flex-wrap:nowrap"><p>Chargement…</p></div>
-<div id=ctl class=row style="margin-top:12px">${PY?'<button class="b s" onclick=wpy()>Pinyin</button>':''}<button class="b s" onclick=whint()>Indice</button><button class="b s" onclick=wgive()>Je ne sais pas</button></div>`;
-try{await loadHW();const sz=Math.min(220,Math.floor((Math.min(innerWidth,640)-48)/ch.length)),p=Math.round(sz*.08);
-const w={c,ch,k:0,h:0,e:0,done:0,ws:[],dt:[],gv:0};
-$('#wr').innerHTML=ch.map((_,i)=>`<div id=wc${i} style="position:relative;width:${sz}px;height:${sz}px;background:#fff;border:1px solid var(--li);border-radius:12px"></div>`).join('');
-for(let i=0;i<ch.length;i++){const el=$('#wc'+i);el.insertAdjacentHTML('beforeend','<div style="position:absolute;inset:0;background:linear-gradient(var(--li),var(--li)) center/1px 100% no-repeat,linear-gradient(var(--li),var(--li)) center/100% 1px no-repeat"></div>');
-w.dt[i]=await(await gf(HD(ch[i]))).json();
-w.ws[i]=HanziWriter.create(el,ch[i],{width:sz,height:sz,padding:p,showCharacter:false,showOutline:false,strokeColor:'#6b4226',drawingColor:'#6b4226',outlineColor:'#f0dfcc',highlightColor:'#e8832a',drawingWidth:6,showHintAfterMisses:false,highlightOnComplete:false,charDataLoader:(x,ok,ko)=>gf(HD(x)).then(r=>r.json()).then(ok,ko)});
-el.insertAdjacentHTML('beforeend',`<div id=ov${i} style="position:absolute;left:${p}px;top:${p}px;width:${sz-2*p}px;height:${sz-2*p}px;pointer-events:none"></div>`)}
-W=w;wq()}catch(e){$('#wr').innerHTML='<p>Tracés indisponibles : va dans Données > « Télécharger les tracés » avec du réseau.</p>'}}
-function wq(){const k=W.k;W.done=0;W.ws[k].quiz({onMistake:()=>{W.e++},onCorrectStroke:d=>{W.done=d.strokeNum+1;$('#ov'+k).innerHTML=''},onComplete:()=>{if(++W.k<W.ch.length)wq();else wfin()}})}
-function wpy(){$('#py').textContent=PY}
-function whint(){if(!W||W.gv)return;const s=W.dt[W.k]?.strokes[W.done];if(!s)return;W.h++;$('#ov'+W.k).innerHTML=`<svg viewBox="0 -900 1024 1024" width="100%" height="100%"><g transform="scale(1,-1)"><path d="${s}" fill="#e8832a" fill-opacity=".6"/></g></svg>`}
-function wgive(){if(!W||W.gv)return;W.gv=1;W.ws.forEach(w=>{try{w.cancelQuiz()}catch(e){}w.showCharacter()});wend(1,'Pas de souci, voici la réponse. Elle reviendra bientôt.')}
-function wfin(){const g=W.h?2:W.e?3:4;wend(g,g==4?'Parfait ! 🎉':g==3?`Bien (${W.e} erreur${W.e>1?'s':''})`:`Réussi avec ${W.h} indice${W.h>1?'s':''}`)}
-function wend(g,m){wpy();$('#ctl').innerHTML=`<p style="flex:1 0 100%;text-align:center">${m}</p><button class="b f" onclick="wnext(${g})">Suivant</button>`}
-function wnext(g){W=null;grade(g)}
-function vAdd(){const c=E?S.cards.find(x=>x.id==E):null;
-A.innerHTML=`<h2>${c?'Modifier la fiche':'Nouvelle fiche'}</h2><div class=box><label>Recto</label><textarea id=f style="min-height:60px">${esc(c?.f)}</textarea><label>Verso</label><textarea id=b style="min-height:60px">${esc(c?.b)}</textarea>
-<label>Paquet (sous-paquet avec /, ex. Chinois/HSK1)</label><input id=d list=dl value="${esc(c?.d||'')}"><datalist id=dl>${decks().map(d=>`<option>${esc(d)}</option>`).join('')}</datalist>
-<label>Tags (séparés par des virgules)</label><input id=t value="${esc((c?.t||[]).join(', '))}"><button class="b f" onclick=addOne()>${c?'Enregistrer':'Ajouter'}</button></div>
-${c?'':`<h2>Ajout par lots</h2><div class=box><p style="margin:0 0 6px;font-size:13px">Une fiche par ligne : <b>recto ; verso ; tags</b> (tags facultatifs, séparés par des virgules). La tabulation marche aussi (copier depuis Excel).</p>
-<input id=bd list=dl placeholder="Paquet des fiches"><textarea id=bt placeholder="你好 ; bonjour ; salutation&#10;apple ; pomme"></textarea><button class="b f" onclick=addBatch()>Importer le lot</button></div>`}`}
-const tg=s=>s.split(/[,，]/).map(x=>x.trim()).filter(Boolean);
-function addOne(){const f=$('#f').value.trim(),b=$('#b').value.trim();if(!f||!b)return alert('Recto et verso requis');
-if(E){Object.assign(S.cards.find(x=>x.id==E),{f,b,d:$('#d').value.trim()||'Général',t:tg($('#t').value),u:Date.now()});E=null;save();tab='list'}else{S.cards.push(mk(f,b,$('#d').value.trim(),tg($('#t').value)));save();$('#f').value=$('#b').value='';$('#f').focus();return}R()}
-function addBatch(){const d=$('#bd').value.trim()||'Général';let n=0;$('#bt').value.split('\n').forEach(l=>{const p=l.split(/\t|;|；/).map(x=>x.trim());if(p[0]&&p[1]){S.cards.push(mk(p[0],p[1],d,tg(p[2]||'')));n++}});save();alert(n+' fiche(s) ajoutée(s)');$('#bt').value=''}
-function vList(){A.innerHTML=`<h2>Fiches (${S.cards.length})</h2><div class=row><input id=q placeholder="Rechercher texte, tag, paquet"><select id=d style="flex:.6"><option value="">Tous</option>${dopt()}</select></div><div id=l></div>`;
-const f=()=>{const q=$('#q').value.toLowerCase(),d=$('#d').value;$('#l').innerHTML=S.cards.filter(c=>inD(c,d)&&(c.f+c.b+c.d+c.t.join(' ')).toLowerCase().includes(q)).slice(0,200).map(c=>`<div class=box><b>${esc(c.f)}</b><br>${esc(c.b)}<br><small>${esc(c.d)}</small> ${c.t.map(t=>`<span class=tag>${esc(t)}</span>`).join('')}<div class=row style="margin-top:8px"><button class="b s" onclick="E='${c.id}';tab='add';R()">Modifier</button><button class="b s" onclick="del('${c.id}')">Supprimer</button></div></div>`).join('')};$('#q').oninput=$('#d').onchange=f;f()}
-function del(id){if(confirm('Supprimer cette fiche ?')){S.cards=S.cards.filter(c=>c.id!=id);save();vList()}}
-function vSt(){const L=S.log,n=Date.now(),ds=t=>new Date(t).toDateString(),td=L.filter(l=>ds(l.t)==ds(n)).length,ok_=L.filter(l=>l.g>1).length;
-const days=[...Array(14)].map((_,i)=>{const d=new Date(t0()-(13-i)*D);return[d,L.filter(l=>ds(l.t)==d.toDateString()).length]}),mx=Math.max(1,...days.map(x=>x[1]));
-let st=0,d=t0();if(!L.some(l=>ds(l.t)==ds(d)))d-=D;while(L.some(l=>ds(l.t)==ds(d))){st++;d-=D}
-const nw=S.cards.filter(c=>!c.r&&!c.last).length,ma=S.cards.filter(c=>c.i>=21).length,due=S.cards.filter(c=>c.due<=n).length;
-A.innerHTML=`<h2>Statistiques</h2><div class=k><div><b>${S.cards.length}</b>fiches</div><div><b>${due}</b>à revoir</div><div><b>${td}</b>révisions aujourd'hui</div><div><b>${st} j</b>série en cours</div>
-<div><b>${L.length}</b>révisions au total</div><div><b>${L.length?Math.round(ok_/L.length*100):0}%</b>réussite</div><div><b>${nw}</b>nouvelles</div><div><b>${S.cards.length-nw-ma}</b>en apprentissage</div><div><b>${ma}</b>maîtrisées (≥21 j)</div><div><b>${S.cards.length?(S.cards.reduce((a,c)=>a+c.ef,0)/S.cards.length).toFixed(2):'–'}</b>facilité moyenne</div></div>
-<h2 style="margin-top:18px">14 derniers jours</h2><div class=bar>${days.map(x=>`<i title="${x[1]}" style="height:${x[1]/mx*100}%"></i>`).join('')}</div>
-<h2 style="margin-top:18px">Par paquet</h2>${decks().map(p=>{const a=S.cards.filter(c=>c.d==p);return`<div class=box>${esc(p)} — ${a.length} fiches · ${a.filter(c=>c.due<=n).length} à revoir · ${a.filter(c=>c.i>=21).length} maîtrisées · ${a.reduce((s,c)=>s+c.l,0)} échecs</div>`}).join('')}`}
-function vDat(){A.innerHTML=`<h2>Données</h2><div class=box><button class="b f" onclick=exp()>Exporter tout (fichier)</button><br><br><button class="b s f" onclick=shr()>Partager / AirDrop</button></div>
+<div id=ctl class=row style="margin-top:12px">${PY ? '<button class="b s" onclick=wpy()>Pinyin</button>' : ''}<button class="b s" onclick=whint()>Indice</button><button class="b s" onclick=wgive()>Je ne sais pas</button></div>`;
+            try {
+                await loadHW(); const sz = Math.min(220, Math.floor((Math.min(innerWidth, 640) - 48) / ch.length)), p = Math.round(sz * .08);
+                const w = { c, ch, k: 0, h: 0, e: 0, done: 0, ws: [], dt: [], gv: 0 };
+                $('#wr').innerHTML = ch.map((_, i) => `<div id=wc${i} style="position:relative;width:${sz}px;height:${sz}px;background:#fff;border:1px solid var(--li);border-radius:12px"></div>`).join('');
+                for (let i = 0; i < ch.length; i++) {
+                    const el = $('#wc' + i); el.insertAdjacentHTML('beforeend', '<div style="position:absolute;inset:0;background:linear-gradient(var(--li),var(--li)) center/1px 100% no-repeat,linear-gradient(var(--li),var(--li)) center/100% 1px no-repeat"></div>');
+                    w.dt[i] = await (await gf(HD(ch[i]))).json();
+                    w.ws[i] = HanziWriter.create(el, ch[i], { width: sz, height: sz, padding: p, showCharacter: false, showOutline: false, strokeColor: '#6b4226', drawingColor: '#6b4226', outlineColor: '#f0dfcc', highlightColor: '#e8832a', drawingWidth: 6, showHintAfterMisses: false, highlightOnComplete: false, charDataLoader: (x, ok, ko) => gf(HD(x)).then(r => r.json()).then(ok, ko) });
+                    el.insertAdjacentHTML('beforeend', `<div id=ov${i} style="position:absolute;left:${p}px;top:${p}px;width:${sz - 2 * p}px;height:${sz - 2 * p}px;pointer-events:none"></div>`)
+                }
+                W = w; wq()
+            } catch (e) { $('#wr').innerHTML = '<p>Tracés indisponibles : va dans Données > « Télécharger les tracés » avec du réseau.</p>' }
+        }
+        function wq() { const k = W.k; W.done = 0; W.ws[k].quiz({ onMistake: () => { W.e++ }, onCorrectStroke: d => { W.done = d.strokeNum + 1; $('#ov' + k).innerHTML = '' }, onComplete: () => { if (++W.k < W.ch.length) wq(); else wfin() } }) }
+        function wpy() { $('#py').textContent = PY }
+        function whint() { if (!W || W.gv) return; const s = W.dt[W.k]?.strokes[W.done]; if (!s) return; W.h++; $('#ov' + W.k).innerHTML = `<svg viewBox="0 -900 1024 1024" width="100%" height="100%"><g transform="scale(1,-1)"><path d="${s}" fill="#e8832a" fill-opacity=".6"/></g></svg>` }
+        function wgive() { if (!W || W.gv) return; W.gv = 1; W.ws.forEach(w => { try { w.cancelQuiz() } catch (e) { } w.showCharacter() }); wend(1, 'Pas de souci, voici la réponse. Elle reviendra bientôt.') }
+        function wfin() { const g = W.h ? 2 : W.e ? 3 : 4; wend(g, g == 4 ? 'Parfait ! 🎉' : g == 3 ? `Bien (${W.e} erreur${W.e > 1 ? 's' : ''})` : `Réussi avec ${W.h} indice${W.h > 1 ? 's' : ''}`) }
+        function wend(g, m) { wpy(); $('#ctl').innerHTML = `<p style="flex:1 0 100%;text-align:center">${m}</p><button class="b f" onclick="wnext(${g})">Suivant</button>` }
+        function wnext(g) { W = null; grade(g) }
+        function vAdd() {
+            const c = E ? S.cards.find(x => x.id == E) : null;
+            A.innerHTML = `<h2>${c ? 'Modifier la fiche' : 'Nouvelle fiche'}</h2><div class=box><label>Recto</label><textarea id=f style="min-height:60px">${esc(c?.f)}</textarea><label>Verso</label><textarea id=b style="min-height:60px">${esc(c?.b)}</textarea>
+<label>Paquet (sous-paquet avec /, ex. Chinois/HSK1)</label><input id=d list=dl value="${esc(c?.d || '')}"><datalist id=dl>${decks().map(d => `<option>${esc(d)}</option>`).join('')}</datalist>
+<label>Tags (séparés par des virgules)</label><input id=t value="${esc((c?.t || []).join(', '))}"><button class="b f" onclick=addOne()>${c ? 'Enregistrer' : 'Ajouter'}</button></div>
+${c ? '' : `<h2>Ajout par lots</h2><div class=box><p style="margin:0 0 6px;font-size:13px">Une fiche par ligne : <b>recto ; verso ; tags</b> (tags facultatifs, séparés par des virgules). La tabulation marche aussi (copier depuis Excel).</p>
+<input id=bd list=dl placeholder="Paquet des fiches"><textarea id=bt placeholder="你好 ; bonjour ; salutation&#10;apple ; pomme"></textarea><button class="b f" onclick=addBatch()>Importer le lot</button></div>`}`
+        }
+        const tg = s => s.split(/[,，]/).map(x => x.trim()).filter(Boolean);
+        function addOne() {
+            const f = $('#f').value.trim(), b = $('#b').value.trim(); if (!f || !b) return alert('Recto et verso requis');
+            if (E) { Object.assign(S.cards.find(x => x.id == E), { f, b, d: $('#d').value.trim() || 'Général', t: tg($('#t').value), u: Date.now() }); E = null; save(); tab = 'list' } else { S.cards.push(mk(f, b, $('#d').value.trim(), tg($('#t').value))); save(); $('#f').value = $('#b').value = ''; $('#f').focus(); return } R()
+        }
+        function addBatch() { const d = $('#bd').value.trim() || 'Général'; let n = 0; $('#bt').value.split('\n').forEach(l => { const p = l.split(/\t|;|；/).map(x => x.trim()); if (p[0] && p[1]) { S.cards.push(mk(p[0], p[1], d, tg(p[2] || ''))); n++ } }); save(); alert(n + ' fiche(s) ajoutée(s)'); $('#bt').value = '' }
+        function vList() {
+            A.innerHTML = `<h2>Fiches (${S.cards.length})</h2><div class=row><input id=q placeholder="Rechercher texte, tag, paquet"><select id=d style="flex:.6"><option value="">Tous</option>${dopt()}</select></div><div id=l></div>`;
+            const f = () => { const q = $('#q').value.toLowerCase(), d = $('#d').value; $('#l').innerHTML = S.cards.filter(c => inD(c, d) && (c.f + c.b + c.d + c.t.join(' ')).toLowerCase().includes(q)).slice(0, 200).map(c => `<div class=box><b>${esc(c.f)}</b><br>${esc(c.b)}<br><small>${esc(c.d)}</small> ${c.t.map(t => `<span class=tag>${esc(t)}</span>`).join('')}<div class=row style="margin-top:8px"><button class="b s" onclick="E='${c.id}';tab='add';R()">Modifier</button><button class="b s" onclick="del('${c.id}')">Supprimer</button></div></div>`).join('') }; $('#q').oninput = $('#d').onchange = f; f()
+        }
+        function del(id) { if (confirm('Supprimer cette fiche ?')) { S.cards = S.cards.filter(c => c.id != id); save(); vList() } }
+        function vSt() {
+            const L = S.log, n = Date.now(), ds = t => new Date(t).toDateString(), td = L.filter(l => ds(l.t) == ds(n)).length, ok_ = L.filter(l => l.g > 1).length;
+            const days = [...Array(14)].map((_, i) => { const d = new Date(t0() - (13 - i) * D); return [d, L.filter(l => ds(l.t) == d.toDateString()).length] }), mx = Math.max(1, ...days.map(x => x[1]));
+            let st = 0, d = t0(); if (!L.some(l => ds(l.t) == ds(d))) d -= D; while (L.some(l => ds(l.t) == ds(d))) { st++; d -= D }
+            const nw = S.cards.filter(c => !c.r && !c.last).length, ma = S.cards.filter(c => c.i >= 21).length, due = S.cards.filter(c => c.due <= n).length;
+            A.innerHTML = `<h2>Statistiques</h2><div class=k><div><b>${S.cards.length}</b>fiches</div><div><b>${due}</b>à revoir</div><div><b>${td}</b>révisions aujourd'hui</div><div><b>${st} j</b>série en cours</div>
+<div><b>${L.length}</b>révisions au total</div><div><b>${L.length ? Math.round(ok_ / L.length * 100) : 0}%</b>réussite</div><div><b>${nw}</b>nouvelles</div><div><b>${S.cards.length - nw - ma}</b>en apprentissage</div><div><b>${ma}</b>maîtrisées (≥21 j)</div><div><b>${S.cards.length ? (S.cards.reduce((a, c) => a + c.ef, 0) / S.cards.length).toFixed(2) : '–'}</b>facilité moyenne</div></div>
+<h2 style="margin-top:18px">14 derniers jours</h2><div class=bar>${days.map(x => `<i title="${x[1]}" style="height:${x[1] / mx * 100}%"></i>`).join('')}</div>
+<h2 style="margin-top:18px">Par paquet</h2>${decks().map(p => { const a = S.cards.filter(c => c.d == p); return `<div class=box>${esc(p)} — ${a.length} fiches · ${a.filter(c => c.due <= n).length} à revoir · ${a.filter(c => c.i >= 21).length} maîtrisées · ${a.reduce((s, c) => s + c.l, 0)} échecs</div>` }).join('')}`
+        }
+        function vDat() {
+            A.innerHTML = `<h2>Données</h2><div class=box><button class="b f" onclick=exp()>Exporter tout (fichier)</button><br><br><button class="b s f" onclick=shr()>Partager / AirDrop</button></div>
 <div class=box><label>Importer un fichier</label><input type=file id=fi accept=".json" onchange=imp(this.files[0])></div>
 <div class=box><button class="b s f" id=dlb onclick=dl()>Télécharger les tracés (mode écriture)</button><p style="font-size:12px;color:#a98466">À faire avec du réseau, puis après chaque ajout de nouveaux caractères.</p></div>
-<div class=box><label>Date de l'examen HSK</label><input type=date id=ex value="${S.exam||''}" onchange="S.exam=this.value;save()"></div>
+<div class=box><label>Date de l'examen HSK</label><input type=date id=ex value="${S.exam || ''}" onchange="S.exam=this.value;save()"></div>
 <div class=box><button class="b s f" onclick="if(confirm('Tout effacer ?')){S={cards:[],log:[],decks:[]};save();R()}">Tout effacer</button></div>`}
-const blob=()=>new Blob([JSON.stringify({v:1,exported:Date.now(),...S})],{type:'application/json'}),fn=()=>`fiches-${new Date().toISOString().slice(0,10)}.json`;
-function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(blob());a.download=fn();a.click()}
-async function shr(){const f=new File([blob()],fn(),{type:'application/json'});try{await navigator.share({files:[f]})}catch(e){if(e.name!='AbortError')alert('Partage indisponible, utilise « Exporter ».')}}
-async function imp(f){if(!f)return;let d;try{d=JSON.parse(await f.text());if(!Array.isArray(d.cards))throw 0}catch(e){return alert('Fichier invalide')}
-const m=prompt(`${d.cards.length} fiches, ${(d.log||[]).length} révisions.\n1 = Fusionner (garde la version la plus récente de chaque fiche)\n2 = Tout remplacer\nAutre = annuler`);
-if(m=='2')S={cards:d.cards,log:d.log||[],decks:d.decks||[],exam:d.exam||S.exam||''};else if(m=='1'){const mp=new Map(S.cards.map(c=>[c.id,c]));d.cards.forEach(c=>{const o=mp.get(c.id);if(!o||c.u>o.u)mp.set(c.id,c)});S.cards=[...mp.values()];
-const k=new Set(S.log.map(l=>l.t+l.id));(d.log||[]).forEach(l=>{if(!k.has(l.t+l.id))S.log.push(l)});S.log.sort((a,b)=>a.t-b.t);S.decks=[...new Set([...S.decks,...(d.decks||[])])]}else return;if(d.exam&&!S.exam)S.exam=d.exam;save();alert('Import terminé');R()}
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
-R();
-</script></body></html>
+        const blob = () => new Blob([JSON.stringify({ v: 1, exported: Date.now(), ...S })], { type: 'application/json' }), fn = () => `fiches-${new Date().toISOString().slice(0, 10)}.json`;
+        function exp() { const a = document.createElement('a'); a.href = URL.createObjectURL(blob()); a.download = fn(); a.click() }
+        async function shr() { const f = new File([blob()], fn(), { type: 'application/json' }); try { await navigator.share({ files: [f] }) } catch (e) { if (e.name != 'AbortError') alert('Partage indisponible, utilise « Exporter ».') } }
+        async function imp(f) {
+            if (!f) return; let d; try { d = JSON.parse(await f.text()); if (!Array.isArray(d.cards)) throw 0 } catch (e) { return alert('Fichier invalide') }
+            const m = prompt(`${d.cards.length} fiches, ${(d.log || []).length} révisions.\n1 = Fusionner (garde la version la plus récente de chaque fiche)\n2 = Tout remplacer\nAutre = annuler`);
+            if (m == '2') S = { cards: d.cards, log: d.log || [], decks: d.decks || [], exam: d.exam || S.exam || '' }; else if (m == '1') {
+                const mp = new Map(S.cards.map(c => [c.id, c])); d.cards.forEach(c => { const o = mp.get(c.id); if (!o || c.u > o.u) mp.set(c.id, c) }); S.cards = [...mp.values()];
+                const k = new Set(S.log.map(l => l.t + l.id)); (d.log || []).forEach(l => { if (!k.has(l.t + l.id)) S.log.push(l) }); S.log.sort((a, b) => a.t - b.t); S.decks = [...new Set([...S.decks, ...(d.decks || [])])]
+            } else return; if (d.exam && !S.exam) S.exam = d.exam; save(); alert('Import terminé'); R()
+        }
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+        R();
+    </script>
+</body>
+
+</html>
