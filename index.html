@@ -23,14 +23,13 @@ textarea{min-height:110px}.b{background:var(--or);color:#fff;border:0;border-rad
 <nav id="nav"></nav>
 <script>
 const $=s=>document.querySelector(s),D=864e5,A=$('#app');
-let S=JSON.parse(localStorage.fc||'{"cards":[],"log":[],"decks":[]}'),tab='rev',Q=null,E=null,ok=!localStorage.fcpw;
+let S=JSON.parse(localStorage.fc||'{"cards":[],"log":[],"decks":[]}'),tab='rev',Q=null,E=null;localStorage.removeItem('fcpw');
 const save=()=>localStorage.fc=JSON.stringify(S);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const t0=()=>new Date().setHours(0,0,0,0),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const decks=()=>[...new Set([...S.decks,...S.cards.map(c=>c.d)])].filter(Boolean).sort();
 const inD=(c,d)=>!d||c.d===d||c.d.startsWith(d+'/');
 const mk=(f,b,d,t)=>({id:uid(),f,b,d:d||'Général',t:t||[],ef:2.5,i:0,r:0,due:0,l:0,last:0,u:Date.now()});
-const sha=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(x=>x.toString(16).padStart(2,'0')).join('');
 function nx(c,g){let{ef,i,r}=c;if(g==1)return{ef:Math.max(1.3,ef-.2),i:0,r:0};
 if(g==2){i=r?Math.max(i+1,Math.round(i*1.2)):1;ef=Math.max(1.3,ef-.15)}
 else if(g==3)i=r==0?2:r==1?6:Math.round(i*ef);else{i=r?Math.max(i+1,Math.round(i*ef*1.3)):4;ef+=.15}
@@ -39,21 +38,19 @@ const lab=(c,g)=>g==1?'<10 min':nx(c,g).i+' j';
 function pool(m,d,rnd){let a=S.cards.filter(c=>inD(c,d)&&(m=='all'||(m=='due'&&c.due<=Date.now())||(m=='fail'&&c.last>0&&c.last<3)));
 a.sort((x,y)=>x.due-y.due);if(rnd)a.sort(()=>Math.random()-.5);return a.map(c=>c.id)}
 function nav(){$('#nav').innerHTML=[['rev','Réviser'],['add','Ajouter'],['list','Fiches'],['st','Stats'],['dat','Données']].map(([k,n])=>`<button class="${tab==k?'on':''}" onclick="tab='${k}';Q=null;if('${k}'!='add')E=null;R()">${n}</button>`).join('')}
-function R(){nav();if(!ok)return lock();({rev:vRev,add:vAdd,list:vList,st:vSt,dat:vDat})[tab]()}
-function lock(){$('#nav').innerHTML='';A.innerHTML=`<h2>🔒 Fiches</h2><input id=p type=password placeholder="Mot de passe"><button class="b f" onclick="unlock()">Ouvrir</button><p id=e></p>`}
-async function unlock(){if(await sha($('#p').value)==localStorage.fcpw){ok=1;R()}else $('#e').textContent='Mot de passe incorrect'}
+function R(){nav();({rev:vRev,add:vAdd,list:vList,st:vSt,dat:vDat})[tab]()}
 function dopt(sel){return decks().map(d=>`<option ${d==sel?'selected':''}>${esc(d)}</option>`).join('')}
 function vRev(){if(Q)return card();
 A.innerHTML=wd()+`<h2>Réviser</h2><div class=box><label>Paquet (inclut ses sous-paquets)</label><select id=d><option value="">Tous les paquets</option>${dopt()}</select>
-<label>Exercice</label><select id=x><option value=c>Classique (retourner la carte)</option><option value=w>Écriture des caractères chinois</option></select><label>Mode</label><select id=m><option value=due>Répétition espacée (à revoir)</option><option value=all>Toutes les fiches</option><option value=fail>Seulement les fiches ratées</option></select>
+<label>Mode</label><select id=m><option value=due>Répétition espacée (à revoir)</option><option value=all>Toutes les fiches</option><option value=fail>Seulement les fiches ratées</option></select>
 <label><input type=checkbox id=rn style="width:auto"> Ordre aléatoire</label><br><label><input type=checkbox id=rv style="width:auto"> Verso d'abord</label></div>
-<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><p style="font-size:13px;color:#a98466">Espace = retourner · 1 Raté · 2 Difficile · 3 Bien · 4 Facile · swipe → bien, ← raté</p>`;
-const u=()=>$('#cnt').textContent=pool('due',$('#d').value).length+' fiche(s) à revoir dans ce paquet';$('#d').onchange=u;u()}
+<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><button class="b s f" id=wb onclick="start(1)" style="margin-top:8px;display:none">✍️ Écriture des caractères chinois</button><p style="font-size:13px;color:#a98466">Espace = retourner · 1 Raté · 2 Difficile · 3 Bien · 4 Facile · swipe → bien, ← raté</p>`;
+const u=()=>{const d=$('#d').value;$('#cnt').textContent=pool('due',d).length+' fiche(s) à revoir dans ce paquet';$('#wb').style.display=d&&S.cards.some(c=>inD(c,d)&&zh(c.f))?'':'none'};$('#d').onchange=u;u()}
 function wd(){const L=S.log,ds=t=>new Date(t).toDateString(),n=Date.now(),td=new Set(L.filter(l=>ds(l.t)==ds(n)).map(l=>l.id)).size;
 let st=0,d=t0();if(!L.some(l=>ds(l.t)==ds(d)))d-=D;while(L.some(l=>ds(l.t)==ds(d))){st++;d-=D}
-const ma=S.cards.filter(c=>c.i>=21).length,s=x=>x>1?'s':'';
-return `<div class=wd style="background:${td?'var(--or)':'var(--br)'}"><div><b>${st}</b>jour${s(st)} de suite</div><div><b>${td}</b>fiche${s(td)} révisée${s(td)} aujourd'hui</div><div><b>${ma}</b>fiche${s(ma)} maîtrisée${s(ma)}</div></div>`}
-function start(){const x=$('#x').value=='w';let p=pool($('#m').value,$('#d').value,$('#rn').checked);if(x)p=p.filter(id=>zh(S.cards.find(c=>c.id==id).f));if(!p.length)return alert('Aucune fiche pour ce mode.');
+const ex=S.exam?Math.round((new Date(S.exam+'T00:00:00')-t0())/D):null,s=x=>x>1?'s':'';
+return `<div class=wd style="background:${td?'var(--or)':'var(--br)'}"><div><b>${st}</b>jour${s(st)} de suite</div><div><b>${td}</b>fiche${s(td)} révisée${s(td)} aujourd'hui</div><div><b>${ex===null?'–':ex<0?'✓':ex}</b>${ex===null?'date du HSK à définir (Données)':ex==0?'jour J !':ex<0?'examen passé':`jour${s(ex)} avant le HSK`}</div></div>`}
+function start(x){x=!!x;let p=pool($('#m').value,$('#d').value,$('#rn').checked);if(x)p=p.filter(id=>zh(S.cards.find(c=>c.id==id).f));if(!p.length)return alert('Aucune fiche pour ce mode.');
 Q={pool:p,queue:p.splice(0,20),done:0,fl:0,rv:$('#rv').checked,n:0,w:x,fails:{},skip:0};card()}
 function card(){if(Q.queue.length&&Q.w)return wcard();if(!Q.queue.length){const more=Q.pool.length;A.innerHTML=`<h2>Session terminée 🎉</h2><p>${Q.done} fiche(s) validée(s).</p>${Q.skip?`<p>${Q.skip} fiche(s) mise(s) de côté après 3 échecs d'affilée : elles reviendront à la prochaine session.</p>`:''}${more?`<button class="b f" onclick="Q.queue=Q.pool.splice(0,20);card()">Continuer (${Math.min(20,more)} de plus)</button><br><br>`:''}<button class="b s f" onclick="Q=null;R()">Terminer</button>`;return}
 const c=S.cards.find(x=>x.id==Q.queue[0]),face=Q.fl?(Q.rv?c.f:c.b):(Q.rv?c.b:c.f);
@@ -66,7 +63,7 @@ function gr(g){if(Q&&Q.fl)grade(g)}
 function grade(g){const id=Q.queue.shift(),c=S.cards.find(x=>x.id==id),n=nx(c,g);
 Object.assign(c,n,{due:g==1?0:t0()+n.i*D,last:g,l:c.l+(g==1?1:0),u:Date.now()});S.log.push({t:Date.now(),id,g,d:c.d});save();
 if(g==1){const k=Q.fails[id]=(Q.fails[id]||0)+1;if(k>=3)Q.skip++;else Q.queue.push(id)}else{Q.fails[id]=0;Q.done++}Q.fl=0;card()}
-document.addEventListener('keydown',e=>{if(!ok||tab!='rev'||!Q||Q.w||!Q.queue.length||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+document.addEventListener('keydown',e=>{if(tab!='rev'||!Q||Q.w||!Q.queue.length||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
 if(e.key==' '||e.key=='Enter'){e.preventDefault();if(!Q.fl){Q.fl=1;card()}}else if('1234'.includes(e.key))gr(+e.key)});
 const zh=s=>/[\u3400-\u9fff]/.test(s);
 const HW='https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js',HD=c=>'https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/'+encodeURIComponent(c)+'.json';
@@ -120,16 +117,15 @@ A.innerHTML=`<h2>Statistiques</h2><div class=k><div><b>${S.cards.length}</b>fich
 function vDat(){A.innerHTML=`<h2>Données</h2><div class=box><button class="b f" onclick=exp()>Exporter tout (fichier)</button><br><br><button class="b s f" onclick=shr()>Partager / AirDrop</button></div>
 <div class=box><label>Importer un fichier</label><input type=file id=fi accept=".json" onchange=imp(this.files[0])></div>
 <div class=box><button class="b s f" id=dlb onclick=dl()>Télécharger les tracés (mode écriture)</button><p style="font-size:12px;color:#a98466">À faire avec du réseau, puis après chaque ajout de nouveaux caractères.</p></div>
-<div class=box><button class="b s f" onclick=pw()>Définir / changer le mot de passe</button><p style="font-size:12px;color:#a98466">Ce verrou protège l'accès à l'app ; il ne chiffre pas le fichier d'export.</p></div>
+<div class=box><label>Date de l'examen HSK</label><input type=date id=ex value="${S.exam||''}" onchange="S.exam=this.value;save()"></div>
 <div class=box><button class="b s f" onclick="if(confirm('Tout effacer ?')){S={cards:[],log:[],decks:[]};save();R()}">Tout effacer</button></div>`}
 const blob=()=>new Blob([JSON.stringify({v:1,exported:Date.now(),...S})],{type:'application/json'}),fn=()=>`fiches-${new Date().toISOString().slice(0,10)}.json`;
 function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(blob());a.download=fn();a.click()}
 async function shr(){const f=new File([blob()],fn(),{type:'application/json'});try{await navigator.share({files:[f]})}catch(e){if(e.name!='AbortError')alert('Partage indisponible, utilise « Exporter ».')}}
 async function imp(f){if(!f)return;let d;try{d=JSON.parse(await f.text());if(!Array.isArray(d.cards))throw 0}catch(e){return alert('Fichier invalide')}
 const m=prompt(`${d.cards.length} fiches, ${(d.log||[]).length} révisions.\n1 = Fusionner (garde la version la plus récente de chaque fiche)\n2 = Tout remplacer\nAutre = annuler`);
-if(m=='2')S={cards:d.cards,log:d.log||[],decks:d.decks||[]};else if(m=='1'){const mp=new Map(S.cards.map(c=>[c.id,c]));d.cards.forEach(c=>{const o=mp.get(c.id);if(!o||c.u>o.u)mp.set(c.id,c)});S.cards=[...mp.values()];
-const k=new Set(S.log.map(l=>l.t+l.id));(d.log||[]).forEach(l=>{if(!k.has(l.t+l.id))S.log.push(l)});S.log.sort((a,b)=>a.t-b.t);S.decks=[...new Set([...S.decks,...(d.decks||[])])]}else return;save();alert('Import terminé');R()}
-async function pw(){const p=prompt('Nouveau mot de passe (vide = aucun)');if(p===null)return;if(p)localStorage.fcpw=await sha(p);else localStorage.removeItem('fcpw');alert('Enregistré')}
+if(m=='2')S={cards:d.cards,log:d.log||[],decks:d.decks||[],exam:d.exam||S.exam||''};else if(m=='1'){const mp=new Map(S.cards.map(c=>[c.id,c]));d.cards.forEach(c=>{const o=mp.get(c.id);if(!o||c.u>o.u)mp.set(c.id,c)});S.cards=[...mp.values()];
+const k=new Set(S.log.map(l=>l.t+l.id));(d.log||[]).forEach(l=>{if(!k.has(l.t+l.id))S.log.push(l)});S.log.sort((a,b)=>a.t-b.t);S.decks=[...new Set([...S.decks,...(d.decks||[])])]}else return;if(d.exam&&!S.exam)S.exam=d.exam;save();alert('Import terminé');R()}
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 R();
 </script></body></html>
