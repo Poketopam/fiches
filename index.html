@@ -7,7 +7,9 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-t
 nav button{flex:1;border:0;background:0;padding:12px 2px;font-size:13px;color:#a98466}nav .on{color:var(--or);font-weight:700}
 h2{margin:.2em 0 .6em}input,select,textarea,button{font:inherit;color:inherit}
 input,select,textarea{width:100%;padding:10px;border:1px solid var(--li);border-radius:10px;background:#fff;margin:4px 0 10px}
-textarea{min-height:110px}.b{background:var(--or);color:#fff;border:0;border-radius:12px;padding:12px 16px;font-weight:600}
+textarea{min-height:110px}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;height:44px;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left}.b{background:var(--or);color:#fff;border:0;border-radius:12px;padding:12px 16px;font-weight:600}
 .b.s{background:var(--so);color:var(--br);border:1px solid var(--li)}.b.f{width:100%}
 .box{background:#fff;border:1px solid var(--li);border-radius:14px;padding:12px;margin:8px 0}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
@@ -45,7 +47,7 @@ function vRev(){if(Q)return card();
 A.innerHTML=wd()+`<h2>Réviser</h2><div class=box><label>Paquet (inclut ses sous-paquets)</label><select id=d><option value="">Tous les paquets</option>${dopt()}</select>
 <label>Mode</label><select id=m><option value=due>Répétition espacée (à revoir)</option><option value=all>Toutes les fiches</option><option value=fail>Seulement les fiches ratées</option></select>
 <label><input type=checkbox id=rn style="width:auto"> Ordre aléatoire</label><br><label><input type=checkbox id=rv style="width:auto"> Verso d'abord</label></div>
-<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><button class="b s f" id=wb onclick="start(1)" style="margin-top:8px;display:none">✍️ Écriture des caractères chinois</button><p style="font-size:13px;color:#a98466">Espace = retourner · 1 Raté · 2 Difficile · 3 Bien · 4 Facile · swipe → bien, ← raté</p>`;
+<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><button class="b s f" id=wb onclick="start(1)" style="margin-top:8px;display:none">Écriture des caractères chinois</button><p style="font-size:13px;color:#a98466">${tch()?'Touche la carte pour la retourner · glisse vers la droite = Bien · vers la gauche = Raté':'Espace = retourner la carte · 1 Raté · 2 Difficile · 3 Bien · 4 Facile'}</p>`;
 const u=()=>{const d=$('#d').value;$('#cnt').textContent=pool('due',d).length+' fiche(s) à revoir dans ce paquet';$('#wb').style.display=d&&S.cards.some(c=>inD(c,d)&&zh(c.f))?'':'none'};$('#d').onchange=u;u()}
 function wd(){const L=S.log,ds=t=>new Date(t).toDateString(),n=Date.now(),td=new Set(L.filter(l=>ds(l.t)==ds(n)).map(l=>l.id)).size;
 let st=0,d=t0();if(!L.some(l=>ds(l.t)==ds(d)))d-=D;while(L.some(l=>ds(l.t)==ds(d))){st++;d-=D}
@@ -66,6 +68,7 @@ Object.assign(c,n,{due:g==1?0:t0()+n.i*D,last:g,l:c.l+(g==1?1:0),u:Date.now()});
 if(g==1){const k=Q.fails[id]=(Q.fails[id]||0)+1;if(k>=3)Q.skip++;else Q.queue.push(id)}else{Q.fails[id]=0;Q.done++}Q.fl=0;card()}
 document.addEventListener('keydown',e=>{if(tab!='rev'||!Q||Q.w||!Q.queue.length||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
 if(e.key==' '||e.key=='Enter'){e.preventDefault();if(!Q.fl){Q.fl=1;card()}}else if('1234'.includes(e.key))gr(+e.key)});
+const tch=()=>matchMedia('(pointer:coarse)').matches;
 const zh=s=>/[\u3400-\u9fff]/.test(s);
 const HW='https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js',HD=c=>'https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/'+encodeURIComponent(c)+'.json';
 async function gf(u){const ch=await caches.open('trace');let r=await ch.match(u);if(!r){r=await fetch(u);if(!r.ok)throw 0;await ch.put(u,r.clone())}return r}
