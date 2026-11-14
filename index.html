@@ -47,12 +47,13 @@ function vRev(){if(Q)return card();
 A.innerHTML=wd()+`<h2>Réviser</h2><div class=box><label>Paquet (inclut ses sous-paquets)</label><select id=d><option value="">Tous les paquets</option>${dopt()}</select>
 <label>Mode</label><select id=m><option value=due>Répétition espacée (à revoir)</option><option value=all>Toutes les fiches</option><option value=fail>Seulement les fiches ratées</option></select>
 <label><input type=checkbox id=rn style="width:auto"> Ordre aléatoire</label><br><label><input type=checkbox id=rv style="width:auto"> Verso d'abord</label></div>
-<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><button class="b s f" id=wb onclick="start(1)" style="margin-top:8px;display:none">Écriture des caractères chinois</button><p style="font-size:13px;color:#a98466">${tch()?'Touche la carte pour la retourner · glisse vers la droite = Bien · vers la gauche = Raté':'Espace = retourner la carte · 1 Raté · 2 Difficile · 3 Bien · 4 Facile'}</p>`;
+<p id=cnt></p><button class="b f" onclick=start()>Commencer (20 fiches)</button><button class="b s f" id=wb onclick="start(1)" style="margin-top:8px;display:none">Écriture des caractères chinois</button>
+<p style="font-size:13px;color:#a98466;line-height:1.7">${tch()?'Touche la carte pour la retourner<br>Glisse vers la droite = Bien<br>Glisse vers la gauche = Raté':'Espace = retourner la carte<br>1 = Raté<br>2 = Difficile<br>3 = Bien<br>4 = Facile'}</p>`;
 const u=()=>{const d=$('#d').value;$('#cnt').textContent=pool('due',d).length+' fiche(s) à revoir dans ce paquet';$('#wb').style.display=d&&S.cards.some(c=>inD(c,d)&&zh(c.f))?'':'none'};$('#d').onchange=u;u()}
 function wd(){const L=S.log,ds=t=>new Date(t).toDateString(),n=Date.now(),td=new Set(L.filter(l=>ds(l.t)==ds(n)).map(l=>l.id)).size;
 let st=0,d=t0();if(!L.some(l=>ds(l.t)==ds(d)))d-=D;while(L.some(l=>ds(l.t)==ds(d))){st++;d-=D}
 const ex=S.exam?Math.round((new Date(S.exam+'T00:00:00')-t0())/D):null,s=x=>x>1?'s':'';
-return `<div class=wd style="background:${td?'var(--or)':'var(--br)'}"><div><b>${st}</b>jour${s(st)} de suite</div><div><b>${td}</b>fiche${s(td)} révisée${s(td)} aujourd'hui</div><div><b>${ex===null?'–':ex<0?'✓':ex}</b>${ex===null?'date du HSK à définir (Données)':ex==0?'jour J !':ex<0?'examen passé':`jour${s(ex)} avant le HSK`}</div></div>`}
+return `<div class=wd style="background:${td?'var(--or)':'var(--br)'}"><div><b>${st}</b>jour${s(st)} de suite</div><div><b>${td}</b>fiche${s(td)} révisée${s(td)} aujourd'hui</div><div><b>${ex===null?'–':ex<0?'✓':ex}</b>${ex===null?"date d'examen à définir (Données)":ex==0?'jour J !':ex<0?'examen passé':`jour${s(ex)} avant l'examen`}</div></div>`}
 function start(x){x=!!x;let p=pool($('#m').value,$('#d').value,$('#rn').checked);if(x)p=p.filter(id=>zh(S.cards.find(c=>c.id==id).f));if(!p.length)return alert('Aucune fiche pour ce mode.');
 Q={pool:p,queue:p.splice(0,20),done:0,fl:0,rv:$('#rv').checked,n:0,w:x,fails:{},skip:0};card()}
 function card(){if(Q.queue.length&&Q.w)return wcard();if(!Q.queue.length){const more=Q.pool.length;A.innerHTML=`<h2>Session terminée 🎉</h2><p>${Q.done} fiche(s) validée(s).</p>${Q.skip?`<p>${Q.skip} fiche(s) mise(s) de côté après 3 échecs d'affilée : elles reviendront à la prochaine session.</p>`:''}${more?`<button class="b f" onclick="Q.queue=Q.pool.splice(0,20);card()">Continuer (${Math.min(20,more)} de plus)</button><br><br>`:''}<button class="b s f" onclick="Q=null;R()">Terminer</button>`;return}
@@ -121,7 +122,7 @@ A.innerHTML=`<h2>Statistiques</h2><div class=k><div><b>${S.cards.length}</b>fich
 function vDat(){A.innerHTML=`<h2>Données</h2><div class=box><button class="b f" onclick=exp()>Exporter tout (fichier)</button><br><br><button class="b s f" onclick=shr()>Partager / AirDrop</button></div>
 <div class=box><label>Importer un fichier</label><input type=file id=fi accept=".json" onchange=imp(this.files[0])></div>
 <div class=box><button class="b s f" id=dlb onclick=dl()>Télécharger les tracés (mode écriture)</button><p style="font-size:12px;color:#a98466">À faire avec du réseau, puis après chaque ajout de nouveaux caractères.</p></div>
-<div class=box><label>Date de l'examen HSK</label><input type=date id=ex value="${S.exam||''}" onchange="S.exam=this.value;save()"></div>
+<div class=box><label>Date de l'examen</label><input type=date id=ex value="${S.exam||''}" onchange="S.exam=this.value;save()"></div>
 <div class=box><button class="b s f" onclick="if(confirm('Tout effacer ?')){S={cards:[],log:[],decks:[]};save();R()}">Tout effacer</button></div>`}
 const blob=()=>new Blob([JSON.stringify({v:1,exported:Date.now(),...S})],{type:'application/json'}),fn=()=>`fiches-${new Date().toISOString().slice(0,10)}.json`;
 function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(blob());a.download=fn();a.click()}
